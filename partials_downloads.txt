@@ -1,0 +1,14 @@
+#get_inv.pl {INV_URL} | grep {FILTER} | get_grib.pl {GRIB_URL} {OUTPUT}
+
+get_inv.pl {INV_URL} | grep -e ':TMP:' | get_grib.pl {GRIB_URL} partial.grib2
+
+
+
+$ get_inv.pl {INV_URL} | \
+  grep \
+  -e ':surface:' \
+  -e ':2 m above ground:' \
+  -e ':700 mb:' \
+  -e ':[0-9]* m above mean sea level:
+  -e ... | \
+  get_grib.pl {GRIB_URL} {OUTPUT}

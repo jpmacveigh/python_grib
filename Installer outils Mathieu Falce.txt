@@ -1,0 +1,7 @@
+
+sudo apt --fix-broken install
+sudo apt install libeccodes-tools
+
+Ces installations permettent de pouvoir lancer la commande bash  :
+grib_to_netcdf AROME_0.01_SP1_00H_201906300600.grib2 -o test.netcdf
+qui transforme un grib2 en netcdf

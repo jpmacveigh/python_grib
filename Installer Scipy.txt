@@ -1,0 +1,3 @@
+fait le 13 janvier 2020
+
+sudo apt-get install python3-scipy
