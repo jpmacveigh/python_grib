@@ -10,16 +10,16 @@ VERBOSE=1 # verbose error reporting
  
 def example():
     grib_multi_support_on()	
-    print "INPUT = ",INPUT
+    print ("INPUT = ",INPUT)
     f = open(INPUT)
     mcount = grib_count_in_file(f)
-    print "nb de messages dans le fichier : ",mcount
+    print ("nb de messages dans le fichier : ",mcount)
     nbmessages=0
     while 1:
         gid = grib_new_from_file(f,headers_only=True)		
         if gid is None: break
         nbmessages+=1
-        print "*****************  message : %i" % (nbmessages)
+        print ("*****************  message : %i" % (nbmessages))
         iterid = grib_keys_iterator_new(gid,'ls')
         # Different types of keys can be skipped
         # grib_skip_computed(iterid)
@@ -33,18 +33,18 @@ def example():
             keyname = grib_keys_iterator_get_name(iterid)
             keyval = grib_get_string(iterid,keyname)
             nbkeys+=1
-            print "key %i  %s = %s" % (nbkeys,keyname,keyval)
+            print ("key %i  %s = %s" % (nbkeys,keyname,keyval))
         #grib_keys_iterator_delete(iterid)
         #grib_release(gid)
     #f.close()
 def main():
     try:
         example()
-    except GribInternalError,err:
+    except (GribInternalError,err):
         if VERBOSE:
             traceback.print_exc(file=sys.stderr)
         else:
-            print >>sys.stderr,err.msg
+            print >>(sys.stderr,err.msg)
  
         return 1
  

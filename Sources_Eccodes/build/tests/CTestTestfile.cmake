@@ -1,0 +1,38 @@
+# CMake generated Testfile for 
+# Source directory: /home/ubuntu/environment/python_grib/Sources_Eccodes/eccodes-2.15.0-Source/tests
+# Build directory: /home/ubuntu/environment/python_grib/Sources_Eccodes/build/tests
+# 
+# This file includes the relevant testing commands required for 
+# testing this directory and lists subdirectories to be tested as well.
+add_test(eccodes_t_definitions "/home/ubuntu/environment/python_grib/Sources_Eccodes/eccodes-2.15.0-Source/tests/definitions.sh")
+set_tests_properties(eccodes_t_definitions PROPERTIES  ENVIRONMENT "OMP_NUM_THREADS=1" LABELS "eccodes;script")
+add_test(eccodes_t_grib_calendar "/home/ubuntu/environment/python_grib/Sources_Eccodes/eccodes-2.15.0-Source/tests/grib_calendar.sh")
+set_tests_properties(eccodes_t_grib_calendar PROPERTIES  ENVIRONMENT "OMP_NUM_THREADS=1" LABELS "eccodes;script")
+add_test(eccodes_t_unit_tests "/home/ubuntu/environment/python_grib/Sources_Eccodes/eccodes-2.15.0-Source/tests/unit_tests.sh")
+set_tests_properties(eccodes_t_unit_tests PROPERTIES  ENVIRONMENT "OMP_NUM_THREADS=1" LABELS "eccodes;script")
+add_test(eccodes_t_md5 "/home/ubuntu/environment/python_grib/Sources_Eccodes/eccodes-2.15.0-Source/tests/md5.sh")
+set_tests_properties(eccodes_t_md5 PROPERTIES  ENVIRONMENT "OMP_NUM_THREADS=1" LABELS "eccodes;script")
+add_test(eccodes_t_grib_uerra "/home/ubuntu/environment/python_grib/Sources_Eccodes/eccodes-2.15.0-Source/tests/grib_uerra.sh")
+set_tests_properties(eccodes_t_grib_uerra PROPERTIES  ENVIRONMENT "OMP_NUM_THREADS=1" LABELS "eccodes;script")
+add_test(eccodes_t_grib_2nd_order_numValues "/home/ubuntu/environment/python_grib/Sources_Eccodes/eccodes-2.15.0-Source/tests/grib_2nd_order_numValues.sh")
+set_tests_properties(eccodes_t_grib_2nd_order_numValues PROPERTIES  ENVIRONMENT "OMP_NUM_THREADS=1" LABELS "eccodes;script")
+add_test(eccodes_t_grib_ecc-136 "/home/ubuntu/environment/python_grib/Sources_Eccodes/eccodes-2.15.0-Source/tests/grib_ecc-136.sh")
+set_tests_properties(eccodes_t_grib_ecc-136 PROPERTIES  ENVIRONMENT "OMP_NUM_THREADS=1" LABELS "eccodes;script")
+add_test(eccodes_t_grib_ecc-967 "/home/ubuntu/environment/python_grib/Sources_Eccodes/eccodes-2.15.0-Source/tests/grib_ecc-967.sh")
+set_tests_properties(eccodes_t_grib_ecc-967 PROPERTIES  ENVIRONMENT "OMP_NUM_THREADS=1" LABELS "eccodes;script")
+add_test(eccodes_t_julian "/home/ubuntu/environment/python_grib/Sources_Eccodes/eccodes-2.15.0-Source/tests/julian.sh")
+set_tests_properties(eccodes_t_julian PROPERTIES  ENVIRONMENT "OMP_NUM_THREADS=1" LABELS "eccodes;script")
+add_test(eccodes_t_bufr_dump_samples "/home/ubuntu/environment/python_grib/Sources_Eccodes/eccodes-2.15.0-Source/tests/bufr_dump_samples.sh")
+set_tests_properties(eccodes_t_bufr_dump_samples PROPERTIES  ENVIRONMENT "OMP_NUM_THREADS=1" LABELS "eccodes;script")
+add_test(eccodes_t_bufr_json_samples "/home/ubuntu/environment/python_grib/Sources_Eccodes/eccodes-2.15.0-Source/tests/bufr_json_samples.sh")
+set_tests_properties(eccodes_t_bufr_json_samples PROPERTIES  ENVIRONMENT "OMP_NUM_THREADS=1" LABELS "eccodes;script")
+add_test(eccodes_t_bufr_ecc-359 "/home/ubuntu/environment/python_grib/Sources_Eccodes/eccodes-2.15.0-Source/tests/bufr_ecc-359.sh")
+set_tests_properties(eccodes_t_bufr_ecc-359 PROPERTIES  ENVIRONMENT "OMP_NUM_THREADS=1" LABELS "eccodes;script")
+add_test(eccodes_t_bufr_ecc-517 "/home/ubuntu/environment/python_grib/Sources_Eccodes/eccodes-2.15.0-Source/tests/bufr_ecc-517.sh")
+set_tests_properties(eccodes_t_bufr_ecc-517 PROPERTIES  ENVIRONMENT "OMP_NUM_THREADS=1" LABELS "eccodes;script")
+add_test(eccodes_t_bufr_rdbSubTypes "/home/ubuntu/environment/python_grib/Sources_Eccodes/eccodes-2.15.0-Source/tests/bufr_rdbSubTypes.sh")
+set_tests_properties(eccodes_t_bufr_rdbSubTypes PROPERTIES  ENVIRONMENT "OMP_NUM_THREADS=1" LABELS "eccodes;script")
+add_test(eccodes_t_grib_efas "/home/ubuntu/environment/python_grib/Sources_Eccodes/eccodes-2.15.0-Source/tests/grib_efas.sh")
+set_tests_properties(eccodes_t_grib_efas PROPERTIES  ENVIRONMENT "OMP_NUM_THREADS=1" LABELS "eccodes;script")
+add_test(eccodes_t_grib_sh_imag "/home/ubuntu/environment/python_grib/Sources_Eccodes/eccodes-2.15.0-Source/tests/grib_sh_imag.sh")
+set_tests_properties(eccodes_t_grib_sh_imag PROPERTIES  ENVIRONMENT "OMP_NUM_THREADS=1" LABELS "eccodes;script")

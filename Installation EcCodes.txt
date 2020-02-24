@@ -1,0 +1,20 @@
+télécharger eccodes-2.1.0-Source.tar.gz
+le placer dans Eccodes
+se placer dans ce répertoire et faire : 
+    tar -xzf  eccodes-2.1.0-Source.tar.gz qui va créer le répertoire des sources : 
+   /Eccodes/eccodes-2.1.0-Source
+créer un sous-répertoire "buid"
+se placer dans le répertoire vide "build"
+faire : cmake ../eccodes-2.1.0-Source
+mais de nombreuses erreurs sortent. Voir dans CmaekFiles les ficheirs 
+CmakeError.log et CmakeOutput.log
+
+"The Fortran compiler identification is unknown
+CMake Error: your Fortran compiler: "CMAKE_Fortran_COMPILER-NOTFOUND" was not found.  
+Please set CMAKE_Fortran_COMPILER to a valid compiler path or name.
+CMake Error at cmake/ecbuild_log.cmake:191 (message):
+  CRITICAL - Fortran compiler required by project eccodes but does not
+  seem to work"
+
+J'ai refait la même chose le 8 mai 2017 avec la version 2.2.0 : même résultat.
+Stop pour le moment

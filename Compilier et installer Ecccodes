@@ -1,0 +1,33 @@
+sudo apt install gfortran
+
+tar -xzf eccodes-2.15.0-Source.tar.gz
+mkdir build
+cd build
+cmake  ../eccodes-2.15.0-Source -DCMAKE_INSTALL_PREFIX=/Eccodes
+
+
+make
+ctest
+sudo make install
+
+Eccodes est intallé dans /Eccodes
+
+puis pour Python bindings :
+
+pip3 install eccodes-python
+
+Collecting eccodes-python
+  Using cached https://files.pythonhosted.org/packages/d4/e1/0d4a65b52e8f9ff96b8bb7b04da74508e6a127df70947ab810900b346e0f/eccodes_python-0.9.5-py2.py3-none-any.whl
+Collecting attrs (from eccodes-python)
+  Cache entry deserialization failed, entry ignored
+  Using cached https://files.pythonhosted.org/packages/a2/db/4313ab3be961f7a763066401fb77f7748373b6094076ae2bda2806988af6/attrs-19.3.0-py2.py3-none-any.whl
+Collecting numpy (from eccodes-python)
+  Using cached https://files.pythonhosted.org/packages/62/20/4d43e141b5bc426ba38274933ef8e76e85c7adea2c321ecf9ebf7421cedf/numpy-1.18.1-cp36-cp36m-manylinux1_x86_64.whl
+Collecting cffi (from eccodes-python)
+  Downloading https://files.pythonhosted.org/packages/f1/c7/72abda280893609e1ddfff90f8064568bd8bcb2c1770a9d5bb5edb2d1fea/cffi-1.14.0-cp36-cp36m-manylinux1_x86_64.whl (399kB)
+    100% |████████████████████████████████| 399kB 2.7MB/s 
+Collecting pycparser (from cffi->eccodes-python)
+Installing collected packages: attrs, numpy, pycparser, cffi, eccodes-python
+Successfully installed attrs-19.3.0 cffi-1.14.0 eccodes-python-0.9.5 numpy-1.18.1 pycparser-2.19
+Segmentation fault (core dumped)
+

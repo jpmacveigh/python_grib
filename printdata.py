@@ -15,11 +15,11 @@ def example():
    # for i in xrange(len(values)):
    #     print "%d %.10e" % (i+1,values[i])
 
-    print '%d values found in %s' % (len(values),INPUT)
-    print values[20000]
+    print ('%d values found in %s' % (len(values),INPUT))
+    print (values[20000])
 
     for key in ('max','min','average'):
-        print '%s=%.10e' % (key,grib_get(gid,key))
+        print ('%s=%.10e' % (key,grib_get(gid,key)))
 
     grib_release(gid)
     f.close()
@@ -27,7 +27,7 @@ def example():
 def main():
     try:
         example()
-    except GribInternalError,err:
+    except (GribInternalError,err):
         if VERBOSE:
             traceback.print_exc(file=sys.stderr)
         else:
