@@ -5,8 +5,12 @@
 #INPUT = "arpege-world_20200113_00_UGRD_agl_42h.grib2"
 #INPUT=  "cosmo-d2_germany_rotated-lat-lon_single-level_2018080818_006_T_2M.grib2"
 import datetime
-import sys
-sys.path.insert(0,'/home/ubuntu/environment/node_jpmv/WCS_MF') # insérer dans sys.path le dossier contenant le ou les modules
+import json
+#import sys
+#sys.path.insert(0,'/home/ubuntu/environment/node_jpmv/WCS_MF') # insérer dans sys.path le dossier contenant le ou les modules
+#sys.path.insert(0,'/usr/lib/python3.6/site-packages') # insérer dans sys.path le dossier contenant le ou les modules
+#sys.path.insert(0,'/usr/lib/python3.6/site-packages/gribapi') # insérer dans sys.path le dossier contenant le ou les modules
+#sys.path.insert(0,'/usr/lib/python3.6/site-packages/eccodes') # insérer dans sys.path le dossier contenant le ou les modules
 from util_eccodes import *
 
 '''
@@ -62,7 +66,12 @@ for i in range(len(profil_vertical_vent_horizontal)):
     print (i,profil_vertical_vent_horizontal[i][0],profil_vertical_vent_horizontal[i][1],profil_vertical_vent_horizontal[i][2]) 
 
 exit()
-'''
+
+grib_message=get_grib_messages(code_model,"WIND","agl",15)
+print (len(grib_message),construct_times(grib_message[0]))
+
+print(get_une_valeur_brute(code_model,"WIND","agl",12,10,500))
+
 import random
 print(datetime.datetime.now())
 
@@ -72,7 +81,7 @@ for i in range(10):
 
 exit()
 
-'''
+
 vent=get_now_vent_horizontal(code_model,lieu[0],lieu[1],12000.)
 vent[2].affiche_tout()
 
@@ -103,3 +112,13 @@ exit()
 for k in messages[0].keys():
     print (k," : ",msg[k])
 '''      
+"""
+res=les_dates_de_sortie_entourant_now_dans_le_temps("arome-france-hd")
+print (res)
+
+date=datetime.datetime(2020,4,30,10,23)
+res=les_dates_de_sortie_entourant_date_dans_le_temps("arpege-world",date)
+print (res)
+"""
+rep=get_near_valeurs ("arpege-europe","CAPE",datetime.datetime(2020,5,1,10,4),3.06,50.6)
+print(json.dumps(rep, sort_keys=True, indent=4))

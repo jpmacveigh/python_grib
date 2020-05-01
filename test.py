@@ -6,13 +6,13 @@ def main(INPUT):
     infile = INPUT
     fid = open(infile,"r")
     count = grib_count_in_file(fid)
-    print "count : ",count
+    print ("count : ",count)
 
     for i in range(count):
         gid = grib_new_from_file(fid)
         nval = grib_get_size(gid,"values")
         iterid = grib_iterator_new(gid,0)
-        print "count : ",i
+        print ("count : ",i)
         missingValue = grib_get_double(gid,"missingValue")
 
         i=0
@@ -24,9 +24,9 @@ def main(INPUT):
             sys.stdout.write("- %d - lat=%.6f lon=%.6f value=" % (i,lat,lon))
 
             if value == missingValue:
-                print "missing"
+                print ("missing")
             else:
-                print "%.6f" % value
+                print ("%.6f" % value)
 
             i += 1
             
