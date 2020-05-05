@@ -86,11 +86,14 @@ def assert_code_model(code_model):
     assert code_model in les_modeles_MF.keys() , code_model
 
 def get_param_unit(code_param):
-    ''' renvoi l'unité d'un paramètre  ''' 
+    ''' renvoi les unités d'un paramètre  ''' 
     for param in les_param_possibles:
         if param["code_param"]==code_param:
-            return param["unit_param"]
-    return ""
+            if not (param["param_accumulation_unit"]==""):
+                return {"param_name":param["name_param"],"unit_param":param["unit_param"],"unit_param_accumulation":param["param_accumulation_unit"],"isCumul":True}
+            else :
+                return {"param_name":param["name_param"],"unit_param":param["unit_param"],"unit_param_accumulation":param["param_accumulation_unit"],"isCumul":False}
+    return {"param_name":"parametre inconnu","unit_param":"","unit_param_accumulation":"","isCumul":False}
 
 def les_dates_de_sortie_entourant_now_dans_le_temps (code_model):
     now_UTCtimestamp = datetime.datetime.timestamp(datetime.datetime.utcnow())+0.03  # on ajoute 0.03 secondes pour être sur que la date demandée sera future 
@@ -106,7 +109,7 @@ def les_dates_de_sortie_entourant_date_dans_le_temps (code_model,datetimeUTC):
     now_UTCdate = datetime.datetime.utcfromtimestamp(now_UTCtimestamp)
     UTCtimestamp = datetime.datetime.timestamp(datetimeUTC)
     if (UTCtimestamp<now_UTCtimestamp):
-        print ("la date fournie doitêtre future")
+        print ("la date fournie doit être future")
         return(None,"la date fournie n'est pas future")
     date_to_load=get_date_to_load()  # date du dernier run actuel
     i=0
@@ -185,19 +188,88 @@ def get_near_valeurs (code_model,code_param,datepreviUTC,longi,lati):
             niveaux_alleges.append(nav)
         res["niveaux"]=niveaux_alleges
     else :
-        res["status"]=les_dates[1]
+        res["status"]=str(les_dates[1])
     return (res)
+    
+def extract_liste_de_niveaux(code_model,code_param,code_type_niveau,datepreviUTC,lati,longi,liste_de_numniv=None):
+    ''' Extraction des valeurs d'un fichier grib2 d'Openmeteodata pour une position géographique, une date et une liste de niveaux (numérotés à partir de 1) d'un type donné.
+        Les données retournées sont celle du dernier run disponible au point de grille le plus proche de la position demandées
+        et de la date prévue la plus proche (aucune interpolation spatio-temporelle n'est faite)
+        Au retour, la longueur du paramètre ["niveaux"] doit être testée différente de 0 '''
+    rep={}  # les données seront retournées dans un dictionnaire Python
+    now_UTCtimestamp = datetime.datetime.timestamp(datetime.datetime.utcnow())
+    now_UTCdate = datetime.datetime.utcfromtimestamp(now_UTCtimestamp)
+    rep["datenowUTC"]=str(now_UTCdate)
+    rep["code_model"]=code_model
+    rep["code_param"]=code_param
+    rep["code_param_unit"]=get_param_unit(code_param)
+    rep["lati_demandee"]=lati
+    rep["longi_demandee"]=longi
+    rep["niveaux_code_type"]=code_type_niveau
+    datepreviUTC_demandee=datepreviUTC
+    rep["datepreviUTC_demandee"]=str(datepreviUTC_demandee)
+    les_dates=les_dates_de_sortie_entourant_date_dans_le_temps (code_model,datepreviUTC)
+    if les_dates[0] :
+        rep["erreur"]=""
+        daterunUTC=les_dates[0]
+        rep["daterunUTC"]=str(daterunUTC)
+        prop=les_dates[5]
+        if prop >= .5:
+            echeance=les_dates[4]
+            datepreviUTC=les_dates[3]
+        else:
+            echeance=les_dates[2]
+            datepreviUTC=les_dates[1]
+        rep["datepreviUTC_trouvee"]=str(datepreviUTC)
+        rep["echeance"]=echeance
+        rep["ecart_time(s)"]=datepreviUTC.timestamp()-datepreviUTC_demandee.timestamp()
+        path=get_grib_url_to_load(code_model,code_param,code_type_niveau,echeance)   # calcul du path du fichier grib à télécharger
+        get_grib_file_from_url(path) # le fichier grib est mis dans le fichier local "/tmp/tempo.grib2"
+        rep["gribfile_path"]=path  # pour info, le path du fichier qui a été mis dans "tempo.grib2"
+        file_name="/tmp/tempo.grib2"
+        f=open(file_name,'rb')  # ouverture du fichier Grib
+        nbGrib=codes_count_in_file(f)
+        rep["niveaux_nombre_dans_fichier"]=nbGrib  
+        if liste_de_numniv==None:   # si la listes des niveaux n'est pas fournie, on les extrait tous
+            les_niv=range(1,nbGrib+1)
+        else:
+            les_niv=liste_de_numniv # la liste des numéro de niveaux demandés
+        rep["niveaux_nombre_demandes"]=len(les_niv)
+        rep["niveaux_liste_des_numeros_demandes"]=list(les_niv)
+        rep["niveaux_liste_des_valeurs_extraites"]=[]
+        rep["niveaux"]=[]
+        for i in range (nbGrib):  # boucle sur les Grib contenus dans le fichier
+            msg=codes_grib_new_from_file(f)  # chargement en mémoire d'un grib suivant
+            if (i==0):    # à la première itération, on extrait les paramètres communs à tous les messages
+                val=codes_grib_find_nearest	(msg,lati,longi,is_lsm=False,npoints=1)
+                rep["lati_trouvee"] = val[0]["lat"]
+                rep["longi_trouvee"]= val[0]["lon"]
+                rep["ecart_distance(km)"]=val[0]["distance"]
+            if (i+1) in les_niv :  # si l  niveau est à extraire, on l'extrait    
+                rep["niveaux_liste_des_valeurs_extraites"].append(codes_get(msg,"level"))
+                val=codes_grib_find_nearest	(msg,lati,longi,is_lsm=False,npoints=1)
+                rep["niveaux"].append({"niv":codes_get(msg,"level"),"value":val[0]["value"]}) 
+            codes_release(msg) 
+    else :
+        rep["status"]=str(les_dates[1])
+    print(json.dumps(rep,sort_keys=True,indent=4))
+    return (rep)
+
 
 def get_grib_url_to_load(code_model,code_param,code_type_niv,echeance):
         # Exemple d'url :  https://mf-nwp-models.s3.amazonaws.com/arpege-world/v2/2020-01-17/00/RH/agl/0h.grib2
+        #https://mf-nwp-models.s3.amazonaws.com/arome-france/v2/2020-04-03/18/DLWRF/surface/acc_0-4h.grib2
         date_to_load=get_date_to_load()
         code_jour=str(date_to_load.date())
         code_heure="%02d" % date_to_load.hour
         url="https://mf-nwp-models.s3.amazonaws.com/"+code_model+"/v2/"
         url=url+code_jour+"/"+code_heure+"/"     
-        url=url+code_param+"/"+code_type_niv+"/"  # 
+        url=url+code_param+"/"+code_type_niv+"/"  
+        if (get_param_unit(code_param)["isCumul"]==True): # si on a à faire à un paraamtre cumulé
+            url=url+"acc_0-"
         url=url+str(echeance)+"h"
         url=url+".grib2"
+        #print(url)
         return (url)
     
 def get_date_to_load():    #  determine l'heure du RUN le plus récent à télécharger. Pour les 4 modèles : 00,06,12 ou 18 UTC

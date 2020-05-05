@@ -120,5 +120,5 @@ date=datetime.datetime(2020,4,30,10,23)
 res=les_dates_de_sortie_entourant_date_dans_le_temps("arpege-world",date)
 print (res)
 """
-rep=get_near_valeurs ("arpege-europe","CAPE",datetime.datetime(2020,5,1,10,4),3.06,50.6)
+rep=get_near_valeurs ("arpege-europe","TPRATE",datetime.datetime(2020,5,5,9,4),3.06,50.6)
 print(json.dumps(rep, sort_keys=True, indent=4))
