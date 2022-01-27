@@ -98,9 +98,9 @@ def get_param_unit(code_param):
 def les_dates_de_sortie_entourant_now_dans_le_temps (code_model):
     now_UTCtimestamp = datetime.datetime.timestamp(datetime.datetime.utcnow())+0.03  # on ajoute 0.03 secondes pour être sur que la date demandée sera future 
     now_UTCdate = datetime.datetime.utcfromtimestamp(now_UTCtimestamp)
-    return (les_dates_de_sortie_entourant_date_dans_le_temps(code_model,now_UTCdate))
+    return (les_dates_de_sortie_entourant_date_dans_le_temps_futur (code_model,now_UTCdate))
 
-def les_dates_de_sortie_entourant_date_dans_le_temps (code_model,datetimeUTC):
+def les_dates_de_sortie_entourant_date_dans_le_temps_futur (code_model,datetimeUTC):
     ''' calcul les date de sortie d'un model entourant une datetime UTC future '''
     if not(code_model in les_modeles_MF.keys()):
         print ("le code_model est inconnu")
@@ -111,7 +111,30 @@ def les_dates_de_sortie_entourant_date_dans_le_temps (code_model,datetimeUTC):
     if (UTCtimestamp<now_UTCtimestamp):
         print ("la date fournie doit être future")
         return(None,"la date fournie n'est pas future")
-    date_to_load=get_date_to_load()  # date du dernier run actuel
+    date_to_load=get_date_run_to_load_now()  # date du dernier run actuel
+    i=0
+    date=date_to_load
+    while (i in range(600)) and (date<datetimeUTC) :
+        date=date+datetime.timedelta(hours=les_modeles_MF[code_model]["dt-sorties-heures"])
+        i=i+1
+    date_before=date-datetime.timedelta(hours=les_modeles_MF[code_model]["dt-sorties-heures"])
+    echeance_before=(i-1)*les_modeles_MF[code_model]["dt-sorties-heures"]
+    date_after=date
+    date_before_timestamp=datetime.datetime.timestamp(date_before)
+    date_after_timestamp=datetime.datetime.timestamp(date_after)
+    echeance_after=echeance_before+les_modeles_MF[code_model]["dt-sorties-heures"]
+    prop=(UTCtimestamp-date_before_timestamp)/(date_after_timestamp-date_before_timestamp)
+    return(date_to_load,date_before,echeance_before,date_after,echeance_after,prop)
+
+def les_dates_de_sortie_entourant_date_dans_le_temps (code_model,datetimeUTC):
+    ''' calcul les date de sortie d'un model entourant une datetime UTC '''
+    if not(code_model in les_modeles_MF.keys()):
+        print ("le code_model est inconnu")
+        return (None,"le code_model est inconnu")
+    now_UTCtimestamp = datetime.datetime.timestamp(datetime.datetime.utcnow())
+    now_UTCdate = datetime.datetime.utcfromtimestamp(now_UTCtimestamp)
+    UTCtimestamp = datetime.datetime.timestamp(datetimeUTC)
+    date_to_load=get_date_run_to_load(datetimeUTC)  # date du dernier run avant datetimeUTC
     i=0
     date=date_to_load
     while (i in range(600)) and (date<datetimeUTC) :
@@ -129,12 +152,12 @@ def les_dates_de_sortie_entourant_date_dans_le_temps (code_model,datetimeUTC):
 def get_entourants_grib_messages (code_model,code_param,code_type_niv):    
     assert_code_model(code_model)
     (date_to_load,_,echeance_before,_,echeance_after,prop)=les_dates_de_sortie_entourant_now_dans_le_temps(code_model)
-    url_before = get_grib_url_to_load(code_model,code_param,code_type_niv,echeance_before)
-    url_after  = get_grib_url_to_load(code_model,code_param,code_type_niv,echeance_after)
+    url_before = get_grib_url_to_load_now(code_model,code_param,code_type_niv,echeance_before)
+    url_after  = get_grib_url_to_load_now(code_model,code_param,code_type_niv,echeance_after)
     return (date_to_load,get_grib_messages_from_url(url_before),get_grib_messages_from_url(url_after),prop)
 
 def get_grib_messages (code_model,code_param,code_type_niv,echeance):
-    url=get_grib_url_to_load(code_model,code_param,code_type_niv,echeance)
+    url=get_grib_url_to_load_now(code_model,code_param,code_type_niv,echeance)
     #print (url)
     return(get_grib_messages_from_url(url))
 
@@ -142,12 +165,61 @@ def get_une_valeur_brute (code_model,code_param,code_type_niv,echeance,rang_mess
     grib_messages=get_grib_messages (code_model,code_param,code_type_niv,echeance)
     return (grib_messages[rang_message]["values"][rang_valeur])
 
-def get_near_valeurs (code_model,code_param,datepreviUTC,longi,lati):
+def get_near_futures_valeurs (code_model,code_param,datepreviUTC,longi,lati):
     ''' Retourne les toutes les valeurs sur la verticale en un point le plus proche d'une date future et d'un position données.
         Toutes les coordonnées verticales disponibles sont retournées.
         Aucune interoplation spatio-temporelle n'est réalisée.
         Au retour, la longueur différente de 0 du paramètre "niveaux" de la réponse doit être testée '''
-    res={}
+    res={} 
+    res["niveaux"]=[]
+    now_UTCtimestamp = datetime.datetime.timestamp(datetime.datetime.utcnow())
+    now_UTCdate = datetime.datetime.utcfromtimestamp(now_UTCtimestamp)
+    res["datenowUTC"]=str(now_UTCdate)
+    res["code_modele"]=code_model
+    res["code_param"]=code_param
+    res["code_param_unit"]=get_param_unit(code_param)
+    res["lati_demandee"]=lati
+    res["longi_demandee"]=longi
+    datepreviUTC_demandee=datepreviUTC
+    res["datepreviUTC_demandee"]=str(datepreviUTC_demandee)
+    les_dates=les_dates_de_sortie_entourant_date_dans_le_temps_futur (code_model,datepreviUTC)
+    if les_dates[0] :
+        res["erreur"]=""
+        daterunUTC=les_dates[0]
+        res["daterunUTC"]=str(daterunUTC) 
+        prop=les_dates[5]
+        if prop >= .5:
+            echeance=les_dates[4]
+            datepreviUTC=les_dates[3]
+        else:
+            echeance=les_dates[2]
+            datepreviUTC=les_dates[1]
+        res["datepreviUTC_trouvee"]=str(datepreviUTC)
+        res["echeance"]=echeance
+        res["ecart_time(s)"]=datepreviUTC.timestamp()-datepreviUTC_demandee.timestamp()
+        rep=(get_profil_vertical_now(code_model,code_param,echeance,longi,lati))
+        niveaux=[]
+        for type_niv in rep:
+            for niv in type_niv:
+                niveaux.append(niv)
+        niveaux_alleges=[]
+        for niv in niveaux:
+            res["longi_trouvee"]=niv[2]
+            res["lati_trouvee"]=niv[3] 
+            res["ecart_distance(km)"]=niv[4]
+            nav=[niv[i] for i in range(len(niv)) if (not ((i==2 or i==3 or i==4)))]
+            niveaux_alleges.append(nav)
+        res["niveaux"]=niveaux_alleges
+    else :
+        res["status"]=les_dates[1]
+    return (res)
+    
+def get_near_valeurs (code_model,code_param,datepreviUTC,longi,lati):
+    ''' Retourne les toutes les valeurs sur la verticale en un point le plus proche d'une date et d'un position données.
+        Toutes les coordonnées verticales disponibles sont retournées.
+        Aucune interoplation spatio-temporelle n'est réalisée.
+        Au retour, la longueur différente de 0 du paramètre "niveaux" de la réponse doit être testée '''
+    res={} 
     res["niveaux"]=[]
     now_UTCtimestamp = datetime.datetime.timestamp(datetime.datetime.utcnow())
     now_UTCdate = datetime.datetime.utcfromtimestamp(now_UTCtimestamp)
@@ -163,7 +235,7 @@ def get_near_valeurs (code_model,code_param,datepreviUTC,longi,lati):
     if les_dates[0] :
         res["erreur"]=""
         daterunUTC=les_dates[0]
-        res["daterunUTC"]=str(daterunUTC)
+        res["daterunUTC"]=str(daterunUTC) 
         prop=les_dates[5]
         if prop >= .5:
             echeance=les_dates[4]
@@ -174,9 +246,9 @@ def get_near_valeurs (code_model,code_param,datepreviUTC,longi,lati):
         res["datepreviUTC_trouvee"]=str(datepreviUTC)
         res["echeance"]=echeance
         res["ecart_time(s)"]=datepreviUTC.timestamp()-datepreviUTC_demandee.timestamp()
-        rep=(get_profil_vertical(code_model,code_param,echeance,longi,lati))
+        rep=(get_profil_vertical(code_model,code_param,echeance,longi,lati,datepreviUTC))
         niveaux=[]
-        for type_niv in rep:
+        for type_niv in rep: 
             for niv in type_niv:
                 niveaux.append(niv)
         niveaux_alleges=[]
@@ -188,78 +260,13 @@ def get_near_valeurs (code_model,code_param,datepreviUTC,longi,lati):
             niveaux_alleges.append(nav)
         res["niveaux"]=niveaux_alleges
     else :
-        res["status"]=str(les_dates[1])
+        res["status"]=les_dates[1]
     return (res)
-    
-def extract_liste_de_niveaux(code_model,code_param,code_type_niveau,datepreviUTC,lati,longi,liste_de_numniv=None):
-    ''' Extraction des valeurs d'un fichier grib2 d'Openmeteodata pour une position géographique, une date et une liste de niveaux (numérotés à partir de 1) d'un type donné.
-        Les données retournées sont celle du dernier run disponible au point de grille le plus proche de la position demandées
-        et de la date prévue la plus proche (aucune interpolation spatio-temporelle n'est faite)
-        Au retour, la longueur du paramètre ["niveaux"] doit être testée différente de 0 '''
-    rep={}  # les données seront retournées dans un dictionnaire Python
-    now_UTCtimestamp = datetime.datetime.timestamp(datetime.datetime.utcnow())
-    now_UTCdate = datetime.datetime.utcfromtimestamp(now_UTCtimestamp)
-    rep["datenowUTC"]=str(now_UTCdate)
-    rep["code_model"]=code_model
-    rep["code_param"]=code_param
-    rep["code_param_unit"]=get_param_unit(code_param)
-    rep["lati_demandee"]=lati
-    rep["longi_demandee"]=longi
-    rep["niveaux_code_type"]=code_type_niveau
-    datepreviUTC_demandee=datepreviUTC
-    rep["datepreviUTC_demandee"]=str(datepreviUTC_demandee)
-    les_dates=les_dates_de_sortie_entourant_date_dans_le_temps (code_model,datepreviUTC)
-    if les_dates[0] :
-        rep["erreur"]=""
-        daterunUTC=les_dates[0]
-        rep["daterunUTC"]=str(daterunUTC)
-        prop=les_dates[5]
-        if prop >= .5:
-            echeance=les_dates[4]
-            datepreviUTC=les_dates[3]
-        else:
-            echeance=les_dates[2]
-            datepreviUTC=les_dates[1]
-        rep["datepreviUTC_trouvee"]=str(datepreviUTC)
-        rep["echeance"]=echeance
-        rep["ecart_time(s)"]=datepreviUTC.timestamp()-datepreviUTC_demandee.timestamp()
-        path=get_grib_url_to_load(code_model,code_param,code_type_niveau,echeance)   # calcul du path du fichier grib à télécharger
-        get_grib_file_from_url(path) # le fichier grib est mis dans le fichier local "/tmp/tempo.grib2"
-        rep["gribfile_path"]=path  # pour info, le path du fichier qui a été mis dans "tempo.grib2"
-        file_name="/tmp/tempo.grib2"
-        f=open(file_name,'rb')  # ouverture du fichier Grib
-        nbGrib=codes_count_in_file(f)
-        rep["niveaux_nombre_dans_fichier"]=nbGrib  
-        if liste_de_numniv==None:   # si la listes des niveaux n'est pas fournie, on les extrait tous
-            les_niv=range(1,nbGrib+1)
-        else:
-            les_niv=liste_de_numniv # la liste des numéro de niveaux demandés
-        rep["niveaux_nombre_demandes"]=len(les_niv)
-        rep["niveaux_liste_des_numeros_demandes"]=list(les_niv)
-        rep["niveaux_liste_des_valeurs_extraites"]=[]
-        rep["niveaux"]=[]
-        for i in range (nbGrib):  # boucle sur les Grib contenus dans le fichier
-            msg=codes_grib_new_from_file(f)  # chargement en mémoire d'un grib suivant
-            if (i==0):    # à la première itération, on extrait les paramètres communs à tous les messages
-                val=codes_grib_find_nearest	(msg,lati,longi,is_lsm=False,npoints=1)
-                rep["lati_trouvee"] = val[0]["lat"]
-                rep["longi_trouvee"]= val[0]["lon"]
-                rep["ecart_distance(km)"]=val[0]["distance"]
-            if (i+1) in les_niv :  # si l  niveau est à extraire, on l'extrait    
-                rep["niveaux_liste_des_valeurs_extraites"].append(codes_get(msg,"level"))
-                val=codes_grib_find_nearest	(msg,lati,longi,is_lsm=False,npoints=1)
-                rep["niveaux"].append({"niv":codes_get(msg,"level"),"value":val[0]["value"]}) 
-            codes_release(msg) 
-    else :
-        rep["status"]=str(les_dates[1])
-    print(json.dumps(rep,sort_keys=True,indent=4))
-    return (rep)
 
-
-def get_grib_url_to_load(code_model,code_param,code_type_niv,echeance):
+def get_grib_url_to_load_now(code_model,code_param,code_type_niv,echeance):
         # Exemple d'url :  https://mf-nwp-models.s3.amazonaws.com/arpege-world/v2/2020-01-17/00/RH/agl/0h.grib2
         #https://mf-nwp-models.s3.amazonaws.com/arome-france/v2/2020-04-03/18/DLWRF/surface/acc_0-4h.grib2
-        date_to_load=get_date_to_load()
+        date_to_load=get_date_run_to_load_now()
         code_jour=str(date_to_load.date())
         code_heure="%02d" % date_to_load.hour
         url="https://mf-nwp-models.s3.amazonaws.com/"+code_model+"/v2/"
@@ -267,33 +274,58 @@ def get_grib_url_to_load(code_model,code_param,code_type_niv,echeance):
         url=url+code_param+"/"+code_type_niv+"/"  
         if (get_param_unit(code_param)["isCumul"]==True): # si on a à faire à un paraamtre cumulé
             url=url+"acc_0-"
-        url=url+str(echeance)+"h"
+        url=url+str(echeance)+"h"   
         url=url+".grib2"
         #print(url)
         return (url)
-    
-def get_date_to_load():    #  determine l'heure du RUN le plus récent à télécharger. Pour les 4 modèles : 00,06,12 ou 18 UTC
-    now_UTCtimestamp = datetime.datetime.timestamp(datetime.datetime.utcnow())
-    now_UTCdate = datetime.datetime.utcfromtimestamp(now_UTCtimestamp)
-    now_UTChour = now_UTCdate.time().hour
-    zero_heure=datetime.time(0)
-    today=datetime.datetime.combine(now_UTCdate,zero_heure)
-    jour=today
-    (h18,h00,h06,h12)=(4,10,16,22)  # heures UTC avant lesquelles on choisi le réseau correspondant
-    if (now_UTChour < h18):
-        heure=18
-        hier=today-datetime.timedelta(days=1)
-        jour=hier
-    elif (h18-1 < now_UTChour < h00):
-        heure=0
-    elif (h00-1 < now_UTChour < h06):
-        heure=6
-    elif (h06-1 < now_UTChour < h12):
-        heure=12
-    else:
-        heure=18
-    return (jour+datetime.timedelta(hours=heure))
-    
+        
+def get_grib_url_to_load(code_model,code_param,code_type_niv,echeance,datepreviUTC):
+        # Exemple d'url :  https://mf-nwp-models.s3.amazonaws.com/arpege-world/v2/2020-01-17/00/RH/agl/0h.grib2
+        #https://mf-nwp-models.s3.amazonaws.com/arome-france/v2/2020-04-03/18/DLWRF/surface/acc_0-4h.grib2
+        date_to_load=get_date_run_to_load(datepreviUTC)
+        code_jour=str(date_to_load.date())
+        code_heure="%02d" % date_to_load.hour
+        url="https://mf-nwp-models.s3.amazonaws.com/"+code_model+"/v2/"
+        url=url+code_jour+"/"+code_heure+"/"     
+        url=url+code_param+"/"+code_type_niv+"/"  
+        if (get_param_unit(code_param)["isCumul"]==True): # si on a à faire à un paraamtre cumulé
+            url=url+"acc_0-"
+        url=url+str(echeance)+"h"   
+        url=url+".grib2"
+        #print(url)
+        return (url)
+
+def get_date_run_to_load(date=None):    
+      """
+      Determine l'heure du RUN le plus récent à télécharger
+      pour une date et heure (UTC) de prévision donnée.
+      On ne choisi que parmi les RUN de 00,06,12 ou 18 UTC.
+      Le calcul tient compte des délais de mise en ligne des RUN des modèles
+      """
+      if date == None :  # si l'heure n'est pas spécifiée, on prend l'heure actuelle
+        date = datetime.datetime.utcnow()
+      heure = date.hour
+      zero_heure=datetime.time(0)
+      today=datetime.datetime.combine(date,zero_heure)
+      jour=today
+      (h18,h00,h06,h12)=(4,10,16,22)  # heures UTC avant lesquelles on choisi le réseau correspondant
+      if (heure < h18):
+          h=18
+          hier=today-datetime.timedelta(days=1)
+          jour=hier
+      elif (h18-1 < heure < h00):
+          h=0
+      elif (h00-1 < heure < h06):
+          h=6
+      elif (h06-1 < heure < h12):
+          h=12
+      else:
+          h=18
+      return (jour+datetime.timedelta(hours=h))    
+
+def get_date_run_to_load_now():    #  determine l'heure du RUN le plus récent à télécharger. Pour les 4 modèles : 00,06,12 ou 18 UTC
+    return (get_date_run_to_load())
+
 def get_grib_messages_from_url(url):
     #print (url)
     messages=[]
@@ -301,7 +333,7 @@ def get_grib_messages_from_url(url):
     if (res["http_get_status"]==200) :
         grib=GribFile(tempo_grib_file_path)
         #print ('Type de "grib":',type(grib))
-        check=False
+        check=False 
         for i in range(len(grib)):
             msg=GribMessage(grib)
             #print ('Type de "msg" : ',type(msg))
@@ -425,7 +457,31 @@ def get_les_niveaux_now_disponibles(code_model,code_param):
         #https://mf-nwp-models.s3.amazonaws.com/arpege-world/v2/2020-01-26/06/TMP/agl/42h.grib2.inv
         #https://mf-nwp-models.s3.amazonaws.com/arpege-world/v2/2020-01-26/06/TMP/agl/6h.grib2.inv
         #https://mf-nwp-models.s3.amazonaws.com/arpege-world/v2/2020-01-26/06/TMP/agl/6h.grib2.inv
-        url=get_grib_url_to_load(code_model,code_param,code_type_niveau,echeance_before)
+        url=get_grib_url_to_load_now(code_model,code_param,code_type_niveau,echeance_before)
+        url=url+".inv"
+        r=requests.get(url)
+        if (r.status_code==200): 
+            les_niveaux_disponibles.append(code_type_niveau)
+            list=r.text.split('\n')
+            les_niveaux=[]
+            for ligne in list:
+                slist=ligne.split(':') 
+                les_niveaux.append(slist[4])
+            rep[code_type_niveau]=les_niveaux
+    rep["les_niveaux_now_disponibles"]=les_niveaux_disponibles
+    return(rep)
+
+def get_les_niveaux_disponibles(code_model,code_param,datepreviUTC):
+    (date_to_load,date_before,echeance_before,date_after,echeance_after,prop)=les_dates_de_sortie_entourant_date_dans_le_temps(code_model,datepreviUTC) 
+    rep={}
+    rep["code_model"]=code_model
+    rep["code_param"]=code_param
+    les_niveaux_disponibles=[]
+    for code_type_niveau in les_niveaux_possibles:
+        #https://mf-nwp-models.s3.amazonaws.com/arpege-world/v2/2020-01-26/06/TMP/agl/42h.grib2.inv
+        #https://mf-nwp-models.s3.amazonaws.com/arpege-world/v2/2020-01-26/06/TMP/agl/6h.grib2.inv
+        #https://mf-nwp-models.s3.amazonaws.com/arpege-world/v2/2020-01-26/06/TMP/agl/6h.grib2.inv
+        url=get_grib_url_to_load(code_model,code_param,code_type_niveau,echeance_before,datepreviUTC) 
         url=url+".inv"
         r=requests.get(url)
         if (r.status_code==200): 
@@ -436,7 +492,7 @@ def get_les_niveaux_now_disponibles(code_model,code_param):
                 slist=ligne.split(':')
                 les_niveaux.append(slist[4])
             rep[code_type_niveau]=les_niveaux
-    rep["les_niveaux_now_disponibles"]=les_niveaux_disponibles
+    rep["les_niveaux_disponibles"]=les_niveaux_disponibles
     return(rep)
 
 def get_now_profil_vertical_old (code_model,code_param,longitude,latitude):
@@ -461,8 +517,8 @@ def get_now_profil_vertical(code_model,code_param,longitude,latitude):
     (date_to_load,date_before,echeance_before,date_after,echeance_after,prop)=les_dates_de_sortie_entourant_now_dans_le_temps (code_model)
     reponse_finale=[]
     for code_type_niv in les_niveaux_now_disponibles["les_niveaux_now_disponibles"]:  # boucle sur les type de niveaux disponibles
-        url_before = get_grib_url_to_load(code_model,code_param,code_type_niv,echeance_before)
-        url_after  = get_grib_url_to_load(code_model,code_param,code_type_niv,echeance_after)
+        url_before = get_grib_url_to_load_now(code_model,code_param,code_type_niv,echeance_before)
+        url_after  = get_grib_url_to_load_now(code_model,code_param,code_type_niv,echeance_after)
         les_url=(url_before,url_after)
         reponse=[]
         reponse.append(code_type_niv)
@@ -492,7 +548,7 @@ def get_now_profil_vertical(code_model,code_param,longitude,latitude):
                 rep.append((i,codes_get_string(gid,"level"),valeur_interpolée_horizontalement(four)))
                 codes_release(gid)  # libération de la mémoire
             f.close()  # fermeture du fichier Grib
-            reponse.append(rep)
+            reponse.append(rep) 
         reponse_now=[]
         code_niv=reponse[0]
         for i in range(len(rep)):
@@ -505,7 +561,7 @@ def get_now_profil_vertical(code_model,code_param,longitude,latitude):
         #print(reponse) 
     return (reponse_finale)
 
-def get_profil_vertical(code_model,code_param,echeance,longitude,latitude):
+def get_profil_vertical_now(code_model,code_param,echeance,longitude,latitude):
     assert -180.<=longitude<=180. , longitude
     assert -90.<=latitude<=90. , latitude
     les_niveaux_now_disponibles=get_les_niveaux_now_disponibles(code_model,code_param)
@@ -514,7 +570,46 @@ def get_profil_vertical(code_model,code_param,echeance,longitude,latitude):
         reponse=[]
         reponse.append(code_type_niv)
         rep=[]
-        url=get_grib_url_to_load(code_model,code_param,code_type_niv,echeance)
+        url=get_grib_url_to_load_now(code_model,code_param,code_type_niv,echeance)
+        print(url)
+        get_grib_file_from_url(url)
+        f = open(tempo_grib_file_path,'rb')  # ouverture du fichier Grib
+        for i in range (codes_count_in_file(f)):  # boucle sur les Grib contenus dans le fichier
+            gid=codes_grib_new_from_file(f)  # chargement en mémoire du grib suivant
+            def affiche_Grib_codes():
+                iterid=codes_keys_iterator_new(gid)
+                while codes_keys_iterator_next(iterid):
+                    keyname = codes_keys_iterator_get_name(iterid)
+                    keyval = codes_get_string(gid, keyname)
+                    print("%s = %s" % (keyname, keyval))
+                return()
+            #affiche_Grib_codes()
+            #exit()
+            le_plus_proche=codes_grib_find_nearest(gid,latitude,longitude_360(longitude),is_lsm=False,npoints=1)  # recherche des 4 points les plus proches
+            #print(le_plus_proche)
+            rep.append((i,codes_get_string(gid,"level"),le_plus_proche[0]["value"]))
+            codes_release(gid)  # libération de la mémoire
+        f.close()  # fermeture du fichier Grib
+        reponse.append(rep)
+        reponse_now=[]
+        code_niv=reponse[0]
+        for i in range(len(rep)):
+            (_,niv,valeur)=reponse[1][i]
+            reponse_now.append((code_niv,niv,le_plus_proche[0]["lon"],le_plus_proche[0]["lat"],le_plus_proche[0]["distance"],valeur))
+        reponse_finale.append(reponse_now)
+    return (reponse_finale)
+    
+def get_profil_vertical(code_model,code_param,echeance,longitude,latitude,datepreviUTC):
+    assert -180.<=longitude<=180. , longitude
+    assert -90.<=latitude<=90. , latitude
+    les_niveaux_disponibles=get_les_niveaux_disponibles(code_model,code_param,datepreviUTC)
+    print("get_profil_vertical : niveaux disponibles =",les_niveaux_disponibles) 
+    reponse_finale=[]
+    for code_type_niv in les_niveaux_disponibles["les_niveaux_disponibles"]:  # boucle sur les type de niveaux disponibles
+        reponse=[]
+        reponse.append(code_type_niv)
+        rep=[]
+        url=get_grib_url_to_load(code_model,code_param,code_type_niv,echeance,datepreviUTC) 
         print(url)
         get_grib_file_from_url(url)
         f = open(tempo_grib_file_path,'rb')  # ouverture du fichier Grib

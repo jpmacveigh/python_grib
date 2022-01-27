@@ -3,8 +3,8 @@ import traceback
 import sys
 
  
-#from gribapi import *
-from eccodes import *
+from gribapi import *
+#from eccodes import *
 
  
 #INPUT = 'AROME_0.025_SP1_00H06H_201510131800.grib2'

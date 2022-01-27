@@ -15,8 +15,9 @@ from eccodes import *
  
 #INPUT = '../../data/reduced_latlon_surface.grib1'
 INPUT= 'AROME_010_SP1_06H_201702040000.grib2'
+INPUT="toto.grb2"
 VERBOSE = 1  # verbose error reporting
- 
+print ("Traitement du fichier: ",INPUT) 
  
 def example():
     f = open(INPUT, 'rb')
